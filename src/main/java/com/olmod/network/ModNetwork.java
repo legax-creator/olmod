@@ -19,5 +19,7 @@ public class ModNetwork {
     public static void register() {
         CHANNEL.registerMessage(id++, RoleSyncPacket.class,
                 RoleSyncPacket::encode, RoleSyncPacket::decode, RoleSyncPacket::handle);
+        CHANNEL.registerMessage(id++, HorseJumpPacket.class,
+                HorseJumpPacket::encode, HorseJumpPacket::decode, HorseJumpPacket::handle);
     }
 }
