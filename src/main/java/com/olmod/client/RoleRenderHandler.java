@@ -10,7 +10,7 @@ import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.player.AbstractClientPlayer;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Cat;
@@ -22,18 +22,6 @@ import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Köpek/kedi/at rolündeki oyuncuların ekranda GERÇEKTEN o hayvan gibi görünmesini sağlar.
- *
- * Yöntem: vanilla oyuncu render'ını iptal edip (RenderPlayerEvent.Pre -> cancel), yerine
- * vanilla WolfModel/CatModel/HorseModel'i elle çiziyoruz. Bu modellerin setupAnim() metodu
- * spesifik olarak Wolf/Cat/Horse tipini beklediği için, dünyaya asla eklenmeyen, sadece
- * animasyon verisi taşımak amacıyla oluşturulmuş "hayalet" (proxy) bir Wolf/Cat/Horse
- * kullanıyoruz; oyuncunun yürüme animasyonunu (walkAnimation), bakış açısını ve (kedi/köpek
- * için) oturma durumunu bu proxy'ye aktarıp vanilla animasyon koduyla aynı bacak/kuyruk
- * hareketini elde ediyoruz. Bu, tam oyuncu iskeletiyle bire bir eşleşmediği için mükemmel
- * olmayabilir ama gerçek vanilla animasyon mantığını kullandığından oldukça sağlam bir sonuç verir.
- */
 @Mod.EventBusSubscriber(modid = "olmod", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class RoleRenderHandler {
 
@@ -54,8 +42,6 @@ public class RoleRenderHandler {
 
     @SubscribeEvent
     public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        // Modeller ilk render anında da bake edilebilir; burada dokunmuyoruz,
-        // gerçek bake işlemi ihtiyaç anında (lazy) aşağıda yapılıyor.
     }
 
     private static void ensureModels() {
@@ -82,7 +68,7 @@ public class RoleRenderHandler {
         if (!(event.getEntity() instanceof AbstractClientPlayer player)) return;
 
         PlayerRole role = ClientRoleCache.get(player.getUUID());
-        if (role == PlayerRole.OYUNCU) return; // normal oyuncu -> vanilla render devam etsin
+        if (role == PlayerRole.OYUNCU) return;
 
         event.setCanceled(true);
         ensureModels();
@@ -93,7 +79,6 @@ public class RoleRenderHandler {
         int light = event.getPackedLight();
         float partialTick = event.getPartialTick();
 
-        // Oyuncunun yürüme animasyon durumunu (vanilla'nın kendi hesapladığı) proxy'ye aktar.
         float limbSwing = 0f;
         float limbSwingAmount = player.walkAnimation.speed(partialTick);
         float ageInTicks = player.tickCount + partialTick;
@@ -102,7 +87,7 @@ public class RoleRenderHandler {
         float headPitch = player.getViewXRot(partialTick);
 
         poseStack.pushPose();
-        poseStack.translate(0, 1.5, 0); // ayakları yere yakın hizala (yaklaşık)
+        poseStack.translate(0, 1.5, 0);
 
         switch (role) {
             case KOPEK -> {
@@ -127,9 +112,6 @@ public class RoleRenderHandler {
         poseStack.popPose();
     }
 
-    // Sunucudan sitting bilgisi de senkronize edilmediği için (şu anki paket sadece rol+sahip
-    // taşıyor), burada basitçe false dönüyoruz. Oturma görselini tam yansıtmak istersen
-    // RoleSyncPacket'e bir "sitting" alanı eklemek gerekir — TODO.
     private static boolean sittingRoleCheck(AbstractClientPlayer player) {
         return false;
     }
